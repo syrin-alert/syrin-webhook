@@ -1,119 +1,108 @@
 
-# SYRIN Webhook
+# syrin-webhook
 
-Este projeto é uma API Webhook baseada em Flask que integra com RabbitMQ para processar e enviar notificações baseadas em texto para uma fila de mensagens. A API recebe uma entrada de texto via requisições HTTP POST e, em seguida, envia o texto para uma fila RabbitMQ, que pode ser processada posteriormente.
+O `syrin-webhook` é um serviço baseado em Flask que recebe mensagens de texto ou alertas e os envia para uma fila do RabbitMQ para processamento posterior. Ele é projetado especificamente para lidar com mensagens de diferentes fontes, como Alertmanager e uptime-kuma.
 
 ## Demo
 
 ![Application Demo](./driagrams/Syrin-Webhook.gif)
 
-## Funcionalidades
+## Tabela de Conteúdos
+- [Instalação](#instalação)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Endpoints](#endpoints)
+- [Declarações de Filas](#declarações-de-filas)
+- [Logs](#logs)
+- [Contribuição](#contribuição)
+- [Licença](#licença)
 
-- **Processamento de Texto para Fila**: A API aceita um payload JSON com texto ou dados de mensagem, em seguida, envia para uma fila RabbitMQ para processamento adicional.
-- **Declaração de Filas**: No início, as filas necessárias do RabbitMQ são declaradas para garantir que existam antes do processamento.
-- **Processamento Assíncrono**: O processamento de mensagens de texto é tratado em uma thread separada para garantir operações não bloqueantes para a API.
-- **Configuração Baseada em Variáveis de Ambiente**: Credenciais e detalhes de conexão do RabbitMQ são carregados a partir de variáveis de ambiente.
+## Instalação
 
-## Como Funciona
+Para configurar este serviço, você precisa configurar o RabbitMQ e implantar o serviço usando Kubernetes ou Docker Compose. Para instruções completas de instalação, consulte o [Repositório de Instalação do SYRIN](https://github.com/syrin-alert/syrin-install).
 
-### Endpoints
+## Variáveis de Ambiente
 
-- **POST /api/text-to-speech**
+Este serviço requer as seguintes variáveis de ambiente para configurar os detalhes de conexão do RabbitMQ:
 
-  Este endpoint processa requisições contendo dados de texto ou mensagens e envia os dados para uma fila RabbitMQ. Dependendo do tipo de entrada, a mensagem é roteada para a fila `00_syrin_notification_warning` ou `00_syrin_notification_error`.
+- `RABBITMQ_HOST`: Endereço do servidor RabbitMQ.
+- `RABBITMQ_PORT`: Porta do servidor RabbitMQ (padrão: `5672`).
+- `RABBITMQ_VHOST`: Virtual host no RabbitMQ.
+- `RABBITMQ_USER`: Nome de usuário para autenticação no RabbitMQ.
+- `RABBITMQ_PASS`: Senha para autenticação no RabbitMQ.
 
-#### Exemplo de Requisição
+Essas variáveis devem ser definidas no seu ambiente antes de executar a aplicação.
 
-```bash
-curl -X POST http://localhost:5121/api/text-to-speech \
-    -H "Content-Type: application/json" \
-    -d '{"text": "Esta é uma mensagem de aviso."}'
-```
+## Endpoints
 
-#### Exemplo de Resposta
+### `POST /api/text-to-speech`
+
+#### Descrição
+Recebe um payload JSON com dados de alerta ou mensagens de texto. Ele suporta dois tipos principais de payloads:
+
+1. **Alertas do Alertmanager**: Processa múltiplos alertas, extraindo campos como `description`, `namespace` e `severity`.
+2. **Mensagens de Texto Personalizadas**: Aceita mensagens personalizadas de fontes como uptime-kuma.
+
+#### Formato do Payload
+
+**Payload de Alerta do Alertmanager**:
 
 ```json
 {
-  "message": "Requisição recebida do campo 'text', processamento em andamento."
+  "alerts": [
+    {
+      "labels": {
+        "cluster": "NOME_DO_CLUSTER",
+        "namespace": "NAMESPACE",
+        "severity": "warning ou error"
+      },
+      "annotations": {
+        "description": "Descrição detalhada do alerta"
+      }
+    }
+  ]
 }
 ```
 
-### Filas RabbitMQ
+**Mensagem de Texto Personalizada**:
 
-- `00_syrin_notification_warning`: Fila para mensagens marcadas com nível de "aviso".
-- `00_syrin_notification_error`: Fila para mensagens marcadas com nível de "erro".
+```json
+{
+  "text": "Sua mensagem personalizada aqui"
+}
+```
 
-### Variáveis de Ambiente
+ou
 
-Os detalhes de conexão do RabbitMQ são configurados através das seguintes variáveis de ambiente:
+```json
+{
+  "msg": "Mensagem de alerta do uptime-kuma aqui"
+}
+```
 
-- `RABBITMQ_HOST`: O nome do host ou IP do servidor RabbitMQ.
-- `RABBITMQ_PORT`: A porta em que o RabbitMQ está ouvindo (padrão: 5672).
-- `RABBITMQ_VHOST`: O virtual host utilizado no RabbitMQ.
-- `RABBITMQ_USER`: O nome de usuário do RabbitMQ.
-- `RABBITMQ_PASS`: A senha do RabbitMQ.
+#### Respostas
 
-### Fluxo de Trabalho
+- **Sucesso (200)**: Alertas ou mensagens são aceitos e colocados em fila para processamento.
+  - Exemplo: `{"message": "Alertas do Alertmanager processados com sucesso"}`
+- **Erro (400)**: Campos obrigatórios estão ausentes no payload.
+  - Exemplo: `{"error": "Nenhum texto ou mensagem fornecida"}`
 
-1. **Declaração de Fila**: Quando o aplicativo Flask é iniciado, ele declara as filas necessárias (`00_syrin_notification_warning` e `00_syrin_notification_error`) para garantir que estejam disponíveis para publicação de mensagens.
-2. **Manipulação de Mensagens**: Uma requisição POST é feita para o endpoint `/api/text-to-speech` com dados JSON contendo um campo `text` ou `msg`. Com base no campo e no conteúdo, a mensagem é roteada para a fila apropriada no RabbitMQ.
-3. **Processamento Assíncrono**: A mensagem é enviada ao RabbitMQ em uma thread separada, garantindo que a API responda imediatamente e o texto seja processado em segundo plano.
-4. **Publicação na Fila**: A mensagem é publicada no RabbitMQ com persistência habilitada (modo de entrega 2), garantindo que a mensagem não seja perdida caso o RabbitMQ reinicie.
+## Declarações de Filas
 
-## Executando a Aplicação
+As seguintes filas do RabbitMQ são criadas ao iniciar o serviço:
 
-Para executar a aplicação, siga estas etapas:
+- `00_syrin_notification_warning`: Para mensagens de nível de aviso (warning).
+- `00_syrin_notification_error`: Para mensagens de nível de erro (error).
 
-1. **Configure o RabbitMQ**: Certifique-se de que você tenha o RabbitMQ instalado e em execução. Você pode usar um container Docker para o RabbitMQ:
+Cada mensagem é enviada para a fila correspondente com base no seu nível de severidade.
 
-    ```bash
-    docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
-    ```
+## Logs
 
-2. **Clone o repositório** e navegue até o diretório do projeto:
+A configuração de logs é definida no nível INFO, com os logs da biblioteca `pika` definidos para WARNING para reduzir a verbosidade.
 
-    ```bash
-    git clone https://github.com/syrin-alert/syrin-webhook
-    cd syrin-webhook
-    ```
+## Contribuição
 
-3. **Instale as dependências**:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4. **Execute a API Flask**:
-
-    ```bash
-    python app.py
-    ```
-
-5. **Envie requisições**: Use ferramentas como `curl` ou Postman para enviar uma requisição POST ao endpoint `/api/text-to-speech`.
-
-## Suporte ao Docker
-
-Você também pode compilar e executar a aplicação usando Docker. Para isso:
-
-1. **Compile a imagem Docker**:
-
-    ```bash
-    docker build -t ghcr.io/syrin-alert/syrin-webhook:1.0.1 .
-    ```
-
-2. **Execute o container Docker**:
-
-    ```bash
-    docker run -d -p 5121:5121 --env-file .env ghcr.io/syrin-alert/syrin-webhook:1.0.1
-    ```
-
-## Tecnologias Utilizadas
-
-- **Flask**: Framework web para criar a API Webhook.
-- **RabbitMQ**: Broker de mensagens utilizado para enfileirar e processar mensagens de texto.
-- **Pika**: Biblioteca Python para interagir com o RabbitMQ.
-- **Threading**: Para gerenciar o envio de mensagens de forma assíncrona.
+Sinta-se à vontade para contribuir abrindo issues ou enviando pull requests.
 
 ## Licença
 
-Este projeto é licenciado sob a licença MIT.
+Este projeto está licenciado sob a Licença MIT.
