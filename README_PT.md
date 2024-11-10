@@ -98,13 +98,13 @@ Você também pode compilar e executar a aplicação usando Docker. Para isso:
 1. **Compile a imagem Docker**:
 
     ```bash
-    docker build -t syrin-alert/syrin-webhook:1.0.0 .
+    docker build -t ghcr.io/syrin-alert/syrin-webhook:1.0.1 .
     ```
 
 2. **Execute o container Docker**:
 
     ```bash
-    docker run -d -p 5121:5121 --env-file .env syrin-alert/syrin-webhook:1.0.0
+    docker run -d -p 5121:5121 --env-file .env ghcr.io/syrin-alert/syrin-webhook:1.0.1
     ```
 
 ## Tecnologias Utilizadas
