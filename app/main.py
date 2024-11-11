@@ -61,7 +61,7 @@ def send_text_to_queue(text, level):
     # Send the text to the corresponding queue
     channel.basic_publish(
         exchange='',
-        routing_key='000_notification_' + level,
+        routing_key='00_syrin_notification_' + level,
         body=message,
         properties=pika.BasicProperties(
             delivery_mode=2,  # Makes the message persistent
