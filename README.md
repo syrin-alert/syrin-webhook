@@ -5,7 +5,7 @@ The `syrin-webhook` is a Flask-based service that receives text messages or aler
 
 ## Demo
 
-![Application Demo](./driagrams/Syrin-Webhook.gif)
+![Application Demo](./diagram/Syrin-Webhook.gif)
 
 ## Table of Contents
 - [Installation](#installation)
