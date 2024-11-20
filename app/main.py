@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 import threading
 import os
 import pika
-import json  # Import the JSON library
+import json
 
 # Configure logging at INFO level
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +30,6 @@ def declare_queues():
         virtual_host=rabbitmq_vhost,
         credentials=credentials
     )
-
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
@@ -39,11 +38,10 @@ def declare_queues():
     for queue in queues:
         channel.queue_declare(queue=queue, durable=True)
         logging.info(f"Queue '{queue}' checked or created.")
-
     connection.close()
 
 def send_text_to_queue(text, level):
-    # Connect to RabbitMQ
+    """Send text to RabbitMQ queue."""
     credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
     parameters = pika.ConnectionParameters(
         host=rabbitmq_host,
@@ -51,14 +49,11 @@ def send_text_to_queue(text, level):
         virtual_host=rabbitmq_vhost,
         credentials=credentials
     )
-
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
 
     # Construct the message in JSON format
     message = json.dumps({"text": text, "level": level})
-
-    # Send the text to the corresponding queue
     channel.basic_publish(
         exchange='',
         routing_key='00_syrin_notification_' + level,
@@ -71,35 +66,30 @@ def send_text_to_queue(text, level):
     # Close the connection
     connection.close()
 
-@app.route('/api/text-to-speech', methods=['POST'])
-def text_to_speech():
-    data = request.json
+def process_alertmanager_payload(data):
+    """Process Alertmanager payload."""
+    for alert in data['alerts']:
+        infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
+        namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
+        description = alert.get('annotations', {}).get('description', 'No description provided')
+        text = f"[{infra}] - Namespace: {namespace} - {description}"
+        level = alert.get('labels', {}).get('severity', 'warning')
+        threading.Thread(target=send_text_to_queue, args=(text, level)).start()
+    return jsonify({"message": "Alerts from Alertmanager processed successfully"}), 200
 
-    # Log the received request data
-    app.logger.info(f"Request received with data: {data}")
+def process_pod_alert_payload(data):
+    """Process pod alerts payload."""
+    for alert in data:
+        infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
+        namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
+        description = alert.get('annotations', {}).get('description', 'No description provided')
+        text = f"[{infra}] - Namespace: {namespace} - {description}"
+        level = alert.get('labels', {}).get('severity', 'warning')
+        threading.Thread(target=send_text_to_queue, args=(text, level)).start()
+    return jsonify({"message": "Pod alerts processed successfully"}), 200
 
-    # Check if the payload contains Alertmanager alerts
-    if data and 'alerts' in data:
-        for alert in data['alerts']:
-            # Extract the description and severity level from the alert
-            infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
-            namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
-            description = alert.get('annotations', {}).get('description', 'No description provided')
-            
-            text = f"[{infra}] - Namespace: {namespace} - {description}"
-            level = alert.get('labels', {}).get('severity', 'warning')
-            
-            # Send each alert to the queue in a new thread
-            threading.Thread(target=send_text_to_queue, args=(text, level)).start()
-
-        return jsonify({"message": "Alerts from Alertmanager processed successfully"}), 200
-    
-    # Check for text or msg field
-    if not data or ('text' not in data and 'msg' not in data):
-        app.logger.error("No text or message provided")
-        return jsonify({"error": "No text or message provided"}), 400
-
-    # Check which field the message was received from
+def process_text_payload(data):
+    """Process generic text or msg payload."""
     if 'text' in data:
         text = data['text']
         field_source = 'text'
@@ -116,5 +106,23 @@ def text_to_speech():
 
     # Respond immediately that the processing has been queued
     return jsonify({"message": f"Request received from field '{field_source}', processing in progress."}), 200
+
+@app.route('/api/text-to-speech', methods=['POST'])
+def text_to_speech():
+    """Main route to handle incoming payloads."""
+    data = request.json
+    app.logger.info(f"Request received with data: {data}")
+
+    if isinstance(data, dict) and 'alerts' in data:
+        return process_alertmanager_payload(data)
+
+    if isinstance(data, list) and all('labels' in alert and 'annotations' in alert for alert in data):
+        return process_pod_alert_payload(data)
+
+    if data and ('text' in data or 'msg' in data):
+        return process_text_payload(data)
+
+    app.logger.error("Invalid payload received")
+    return jsonify({"error": "Invalid payload format"}), 400
 
 declare_queues()
