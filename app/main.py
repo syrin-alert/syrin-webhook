@@ -2,6 +2,7 @@ import logging
 from flask import Flask, request, jsonify
 import threading
 import os
+import re
 import pika
 import json
 
@@ -72,7 +73,8 @@ def process_alertmanager_payload(data):
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
-        text = f"[{infra}] - Namespace: {namespace} - {description}"
+        description_cleaned = re.sub(r'[\[\]/\\]', '', description)
+        text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
         level = alert.get('labels', {}).get('severity', 'warning')
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
     return jsonify({"message": "Alerts from Alertmanager processed successfully"}), 200
@@ -83,7 +85,8 @@ def process_pod_alert_payload(data):
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
-        text = f"[{infra}] - Namespace: {namespace} - {description}"
+        description_cleaned = re.sub(r'[\[\]/\\]', '', description)
+        text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
         level = alert.get('labels', {}).get('severity', 'warning')
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
     return jsonify({"message": "Pod alerts processed successfully"}), 200
