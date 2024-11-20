@@ -73,7 +73,8 @@ def process_alertmanager_payload(data):
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
-        description_cleaned = re.sub(r'[\[\]/\\]', '', description)
+        description_cleaned = re.sub(r'[\[\]/\\:\n]', '', description)
+        description_cleaned = re.sub(r':', '_', description_cleaned)
         text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
         level = alert.get('labels', {}).get('severity', 'warning')
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
@@ -85,7 +86,8 @@ def process_pod_alert_payload(data):
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
-        description_cleaned = re.sub(r'[\[\]/\\]', '', description)
+        description_cleaned = re.sub(r'[\[\]/\\:\n]', '', description)
+        description_cleaned = re.sub(r':', '_', description_cleaned)
         text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
         level = alert.get('labels', {}).get('severity', 'warning')
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
