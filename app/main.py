@@ -76,7 +76,7 @@ def process_alertmanager_payload(data):
         description = description.strip()  # Remove espaços no início e no fim
         description_cleaned = re.sub(r':', ': ', description)
         description_cleaned = re.sub(r'_', '-', description_cleaned)
-        text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
+        text = f"[{infra}]\nNamespace: {namespace}\n{description_cleaned}"
         level = alert.get('labels', {}).get('severity', 'warning')
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
     return jsonify({"message": "Alerts from Alertmanager processed successfully"}), 200
@@ -90,7 +90,7 @@ def process_pod_alert_payload(data):
         description = description.strip()  # Remove espaços no início e no fim
         description_cleaned = re.sub(r':', ': ', description)
         description_cleaned = re.sub(r'_', '-', description_cleaned)
-        text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
+        text = f"[{infra}]\nNamespace: {namespace}\n{description_cleaned}"
         level = alert.get('labels', {}).get('severity', 'warning')
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
     return jsonify({"message": "Pod alerts processed successfully"}), 200
