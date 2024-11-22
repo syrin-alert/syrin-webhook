@@ -71,6 +71,7 @@ def process_alertmanager_payload(data):
     """Process Alertmanager payload."""
     for alert in data['alerts']:
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
+        infra = infra[0].upper() + infra[1:] if infra else ''  # Capitaliza a primeira letra
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
         description = description.strip()  # Remove espaços no início e no fim
@@ -85,6 +86,7 @@ def process_pod_alert_payload(data):
     """Process pod alerts payload."""
     for alert in data:
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
+        infra = infra[0].upper() + infra[1:] if infra else ''  # Capitaliza a primeira letra
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
         description = description.strip()  # Remove espaços no início e no fim
