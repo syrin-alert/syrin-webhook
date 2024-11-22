@@ -73,6 +73,7 @@ def process_alertmanager_payload(data):
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
+        description = description.strip()  # Remove espaços no início e no fim
         description_cleaned = re.sub(r':', ': ', description)
         description_cleaned = re.sub(r'_', '-', description_cleaned)
         text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
@@ -86,6 +87,7 @@ def process_pod_alert_payload(data):
         infra = alert.get('labels', {}).get('cluster', 'PRODUCTION')
         namespace = alert.get('labels', {}).get('namespace', 'PRODUCTION')
         description = alert.get('annotations', {}).get('description', 'No description provided')
+        description = description.strip()  # Remove espaços no início e no fim
         description_cleaned = re.sub(r':', ': ', description)
         description_cleaned = re.sub(r'_', '-', description_cleaned)
         text = f"[{infra}] - Namespace: {namespace} - {description_cleaned}"
