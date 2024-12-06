@@ -91,7 +91,7 @@ or
 The following RabbitMQ queues are created upon service startup:
 
 - `00_syrin_notification_warning`: For warning-level messages.
-- `00_syrin_notification_error`: For error-level messages.
+- `00_syrin_notification_critical`: For error-level messages.
 
 Each message is delivered to the corresponding queue based on its severity level.
 

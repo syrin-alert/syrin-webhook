@@ -91,7 +91,7 @@ ou
 As seguintes filas do RabbitMQ são criadas ao iniciar o serviço:
 
 - `00_syrin_notification_warning`: Para mensagens de nível de aviso (warning).
-- `00_syrin_notification_error`: Para mensagens de nível de erro (error).
+- `00_syrin_notification_critical`: Para mensagens de nível de erro (error).
 
 Cada mensagem é enviada para a fila correspondente com base no seu nível de severidade.
 
