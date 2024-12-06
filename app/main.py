@@ -35,7 +35,7 @@ def declare_queues():
     channel = connection.channel()
 
     # Declare the queues to ensure they exist
-    queues = ['00_syrin_notification_warning', '00_syrin_notification_error']
+    queues = ['00_syrin_notification_warning', '00_syrin_notification_critical']
     for queue in queues:
         channel.queue_declare(queue=queue, durable=True)
         logging.info(f"Queue '{queue}' checked or created.")
@@ -43,29 +43,37 @@ def declare_queues():
 
 def send_text_to_queue(text, level):
     """Send text to RabbitMQ queue."""
-    credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
-    parameters = pika.ConnectionParameters(
-        host=rabbitmq_host,
-        port=rabbitmq_port,
-        virtual_host=rabbitmq_vhost,
-        credentials=credentials
-    )
-    connection = pika.BlockingConnection(parameters)
-    channel = connection.channel()
-
-    # Construct the message in JSON format
-    message = json.dumps({"text": text, "level": level})
-    channel.basic_publish(
-        exchange='',
-        routing_key='00_syrin_notification_' + level,
-        body=message,
-        properties=pika.BasicProperties(
-            delivery_mode=2,  # Makes the message persistent
+    try:
+        logging.info(f"Attempting to send message to RabbitMQ. Text: {text}, Level: {level}")
+        credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+        parameters = pika.ConnectionParameters(
+            host=rabbitmq_host,
+            port=rabbitmq_port,
+            virtual_host=rabbitmq_vhost,
+            credentials=credentials
         )
-    )
+        connection = pika.BlockingConnection(parameters)
+        channel = connection.channel()
 
-    # Close the connection
-    connection.close()
+        # Construct the message in JSON format
+        message = json.dumps({"text": text, "level": level})
+        logging.info(f"Publishing message to queue: 00_syrin_notification_{level}")
+        
+        channel.basic_publish(
+            exchange='',
+            routing_key=f'00_syrin_notification_{level}',
+            body=message,
+            properties=pika.BasicProperties(
+                delivery_mode=2,  # Makes the message persistent
+            )
+        )
+        logging.info("Message published successfully.")
+    except Exception as e:
+        logging.error(f"Error while sending message to RabbitMQ: {e}")
+    finally:
+        if connection and not connection.is_closed:
+            connection.close()
+            logging.info("RabbitMQ connection closed.")
 
 def process_alertmanager_payload(data):
     """Process Alertmanager payload."""
@@ -78,7 +86,14 @@ def process_alertmanager_payload(data):
         description_cleaned = re.sub(r':', ': ', description)
         description_cleaned = re.sub(r'_', '-', description_cleaned)
         text = f"[{infra}]\nNamespace: {namespace}\n{description_cleaned}"
-        level = alert.get('labels', {}).get('severity', 'warning')
+
+        # Obter a severidade e mapear para 'warning' ou 'critical'
+        severity = alert.get('labels', {}).get('severity', 'warning').lower()
+        if severity in ['error', 'critical']:
+            level = 'critical'
+        else:
+            level = 'warning'
+            
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
     return jsonify({"message": "Alerts from Alertmanager processed successfully"}), 200
 
@@ -93,7 +108,14 @@ def process_pod_alert_payload(data):
         description_cleaned = re.sub(r':', ': ', description)
         description_cleaned = re.sub(r'_', '-', description_cleaned)
         text = f"[{infra}]\nNamespace: {namespace}\n{description_cleaned}"
-        level = alert.get('labels', {}).get('severity', 'warning')
+        
+        # Obter a severidade e mapear para 'warning' ou 'critical'
+        severity = alert.get('labels', {}).get('severity', 'warning').lower()
+        if severity in ['error', 'critical']:
+            level = 'critical'
+        else:
+            level = 'warning'
+            
         threading.Thread(target=send_text_to_queue, args=(text, level)).start()
     return jsonify({"message": "Pod alerts processed successfully"}), 200
 
@@ -106,9 +128,9 @@ def process_text_payload(data):
     elif 'msg' in data:  # uptime-kuma
         text = data['msg']
         field_source = 'msg'
-        level = "error"
+        level = "critical"
     else:
-        return jsonify({"error": "No text field provided"}), 400
+        return jsonify({"critical": "No text field provided"}), 400
 
     # Process the text in a separate thread
     threading.Thread(target=send_text_to_queue, args=(text, level)).start()
