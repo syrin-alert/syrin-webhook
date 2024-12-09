@@ -1,0 +1,23 @@
+services:
+  - name: svc-syrin-webhook
+    type: ClusterIP
+    selector:
+      app: syrin-webhook
+      component: syrin
+    ports:
+      - name: syrin-webhook-tcp
+        port: 80
+        targetPort: 80
+        protocol: TCP
+
+  - name: svce-syrin-webhook
+    type: NodePort
+    selector:
+      app: syrin-webhook
+      component: syrin
+    ports:
+      - name: syrin-webhook-tcp
+        nodePort: 30007
+        port: 80
+        targetPort: 80
+        protocol: TCP
