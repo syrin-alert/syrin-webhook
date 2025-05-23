@@ -1,6 +1,6 @@
 component: webhook
 core: syrin
-version: 1.0.0
+version: 1.0.18
 
 services:
   - name: svc-syrin-webhook
