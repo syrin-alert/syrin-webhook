@@ -77,7 +77,7 @@ services:
       component: webhook
     ports:
       - name: syrin-webhook-tcp
-        nodePort: 30007
+        nodePort: 30008
         port: 80
         targetPort: 80
         protocol: TCP
