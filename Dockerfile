@@ -16,6 +16,7 @@ COPY ./app/ .
 # Expose port 80
 EXPOSE 80
 
+#BUID
 # docker build -t sw .
 
 # DEV
