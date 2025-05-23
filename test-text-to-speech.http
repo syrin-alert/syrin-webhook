@@ -1,0 +1,7 @@
+### Teste de envio de texto longo para /api/text-to-speech
+POST http://localhost:80/api/text-to-speech
+Content-Type: application/json
+
+{
+  "text": "Olá, este é um texto de teste bem longo.\n\nEle possui várias linhas, acentuação (á, é, í, ó, ú, ç), símbolos especiais (!@#$%) e até emojis 😄🚀.\n\nEsta é a terceira linha.\n\nA quarta linha contém uma citação:\n\"Tudo que pode ser dito, pode ser dito claramente\" - Wittgenstein\n\nE aqui vai mais uma linha só para garantir que o payload é realmente grande e o sistema vai lidar corretamente com textos longos enviados via JSON.\n\nFim do teste. ✅"
+}

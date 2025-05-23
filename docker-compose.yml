@@ -1,0 +1,13 @@
+services:
+  syrin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./app:/app
+    ports:
+      - "80:80"
+    env_file:
+      - .env
+
+# docker compose up --build

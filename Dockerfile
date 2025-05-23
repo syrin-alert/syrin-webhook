@@ -15,3 +15,15 @@ COPY ./app/ .
 
 # Expose port 80
 EXPOSE 80
+
+# docker build -t sw .
+
+# DEV
+# CMD ["python", "run.py"]
+# CMD ["gunicorn", "--bind", "0.0.0.0:80", "main:create_app()"] 
+
+#HOMELAB
+CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers=2", "--threads=2", "--timeout=90", "--access-logfile=-", "--error-logfile=-", "main:create_app()"]
+
+#PRODUCTION
+# CMD ["gunicorn", "--bind", "0.0.0.0:80", "--workers=4", "--threads=2", "--timeout=120", "--access-logfile=-", "--error-logfile=-", "main:create_app()"]

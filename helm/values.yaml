@@ -1,3 +1,7 @@
+component: webhook
+core: syrin
+version: 1.0.0
+
 services:
   - name: svc-syrin-webhook
     type: ClusterIP
