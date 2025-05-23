@@ -38,6 +38,25 @@ deployment:
       env:
         - name: TZ
           value: "America/Sao_Paulo"
+        - name: PORT
+          value: "80"
+        # rabbitmq
+        - name: RABBITMQ_HOST
+          value: "svc-rabbitmq.rabbitmq.svc.cluster.local"
+        - name: RABBITMQ_PORT
+          value: "5672"
+        - name: RABBITMQ_VHOST
+          value: "syrin"
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: s-rabbitmq
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_PASS
+          valueFrom:
+            secretKeyRef:
+              name: s-rabbitmq
+              key: RABBITMQ_DEFAULT_PASS
 
 # ###########################
 # # Definition of the Service
