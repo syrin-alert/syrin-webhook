@@ -15,8 +15,6 @@ deployment:
   lbtype: internal
   affinity:
     - apps: services
-  # imagePullSecrets: 
-  #   - name: ocirsecret-mutantrogue
   containers:
     - name: syrin-webhook
       image: ghcr.io/syrin-alert/

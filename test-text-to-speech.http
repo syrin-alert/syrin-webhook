@@ -5,3 +5,11 @@ Content-Type: application/json
 {
   "text": "Olá, este é um texto de teste bem longo.\n\nEle possui várias linhas, acentuação (á, é, í, ó, ú, ç), símbolos especiais (!@#$%) e até emojis 😄🚀.\n\nEsta é a terceira linha.\n\nA quarta linha contém uma citação:\n\"Tudo que pode ser dito, pode ser dito claramente\" - Wittgenstein\n\nE aqui vai mais uma linha só para garantir que o payload é realmente grande e o sistema vai lidar corretamente com textos longos enviados via JSON.\n\nFim do teste. ✅"
 }
+
+### Simulação
+POST http://192.168.15.150:30008/api/text-to-speech
+Content-Type: application/json
+
+{
+  "text": "🚨 Alerta: Leitura de disco incomum detectada no host!\n\n🖥️ Instância afetada: node-01.local\n📊 IO Wait superior a 80%\n📈 Valor atual: 0.91\n\nEste é um sinal de que o disco está sobrecarregado e pode estar comprometendo o desempenho do sistema.\n\nRecomendações:\n- Verifique processos intensivos em disco.\n- Considere balanceamento de carga ou aumento de IOPS.\n\n⏱️ Este alerta foi gerado automaticamente via Prometheus com base na métrica: rate(node_disk_io_time_seconds_total[5m]) > 0.80\n\n🔖 Etiquetas:\n- severity=warning\n- alertname=HostUnusualDiskReadRate\n\n⚠️ Aja rapidamente para evitar gargalos no sistema!"
+}
