@@ -38,6 +38,8 @@ deployment:
           value: "America/Sao_Paulo"
         - name: PORT
           value: "80"
+        - name: SERVICE_K8S
+          value: "oke"
         # rabbitmq
         - name: RABBITMQ_HOST
           value: "svc-rabbitmq.rabbitmq.svc.cluster.local"
