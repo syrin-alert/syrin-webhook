@@ -14,11 +14,11 @@ def clean_description(description):
 
 def process_alertmanager_payload(data):
     for alert in data['alerts']:
-        infra = alert.get('labels', {}).get('cluster', '(não identificado)').capitalize()
-        k8s = alert.get('labels', {}).get(SERVICE_K8S, '(não identificado)').capitalize()
+        infra = alert.get('labels', {}).get('cluster', '(não identificado)').upper()
+        k8s = alert.get('labels', {}).get(SERVICE_K8S, '(não identificado)').upper()
         if SERVICE_K8S == 'oke':
-            tenancy = alert.get('labels', {}).get('tenancy', '(não identificado)').capitalize()
-        namespace = alert.get('labels', {}).get('namespace', '(não identificado)')
+            tenancy = alert.get('labels', {}).get('tenancy', '(não identificado)').lower()
+        namespace = alert.get('labels', {}).get('namespace', '(não identificado)').lower()
         description = clean_description(alert.get('annotations', {}).get('description', 'No description provided'))
         text = f"Ambiente: {infra}\n Tenancy: {tenancy}\n Kubernetes: {k8s}\n Namespace: {namespace}\n{description}"
         severity = alert.get('labels', {}).get('severity', 'warning').lower()
@@ -28,11 +28,11 @@ def process_alertmanager_payload(data):
 
 def process_pod_alert_payload(data):
     for alert in data:
-        infra = alert.get('labels', {}).get('cluster', '(não identificado)').capitalize()
-        k8s = alert.get('labels', {}).get(SERVICE_K8S, '(não identificado)').capitalize()
+        infra = alert.get('labels', {}).get('cluster', '(não identificado)').upper()
+        k8s = alert.get('labels', {}).get(SERVICE_K8S, '(não identificado)').upper()
         if SERVICE_K8S == 'oke':
-            tenancy = alert.get('labels', {}).get('tenancy', '(não identificado)').capitalize()
-        namespace = alert.get('labels', {}).get('namespace', '(não identificado)')
+            tenancy = alert.get('labels', {}).get('tenancy', '(não identificado)').lower()
+        namespace = alert.get('labels', {}).get('namespace', '(não identificado)').lower()
         description = clean_description(alert.get('annotations', {}).get('description', 'No description provided'))
         text = f"Ambiente: {infra}\n Tenancy: {tenancy}\n Kubernetes: {k8s}\n Namespace: {namespace}\n{description}"
         severity = alert.get('labels', {}).get('severity', 'warning').lower()
