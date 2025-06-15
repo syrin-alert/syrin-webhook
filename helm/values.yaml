@@ -3,7 +3,7 @@
 app: syrin-webhook
 component: webhook
 core: syrin
-version: 1.0.18
+version: 1.0.19
 
 ##############################
 # Definition of the Deployment
