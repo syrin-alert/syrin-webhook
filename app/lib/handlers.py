@@ -20,6 +20,7 @@ def extract_alert_info(alert):
     k8s = labels.get(SERVICE_K8S, '( unidentified )').upper()
     tenancy = labels.get('tenancy', '( unidentified )').lower() if SERVICE_K8S == 'oke' else ''
     namespace = labels.get('namespace', '( unidentified )').lower()
+    nodename = labels.get('nodename', '( unidentified )').lower()
     description = clean_description(annotations.get('description', 'No description provided'))
     summary = clean_description(annotations.get('summary', 'No summary provided'))
     severity = labels.get('severity', 'warning').lower()
@@ -30,6 +31,7 @@ def extract_alert_info(alert):
         f"Tenancy: {tenancy}\n"
         f"Kubernetes: {k8s}\n"
         f"Namespace: {namespace}\n"
+        f"Nodename: {nodename}\n"
         f"Description: {description}\n"
         f"Summary: {summary}"
     )
